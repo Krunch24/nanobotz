@@ -39,3 +39,27 @@ test('returns real SDK output and sanitizes inference errors without Python conf
     delete process.env.OPENAI_API_KEY;
   }
 });
+
+test('learn mode returns sanitized learnings and chat includes learned knowledge', async () => {
+  process.env.OPENAI_API_KEY = 'synthetic-test-fixture';
+  const original = OpenAI.Chat.Completions.prototype.create;
+  try {
+    assert.equal((await proxy(request({ message: 'Hi', knowledge: ['x'.repeat(301)] }))).status, 400);
+    assert.equal((await proxy(request({ message: 'Hi', mode: 'other' }))).status, 400);
+    OpenAI.Chat.Completions.prototype.create = (async (body: any) => {
+      assert.deepEqual(body.response_format, { type: 'json_object' });
+      assert.match(body.messages[0].content, /Likes tea/);
+      return { choices: [{ message: { content: JSON.stringify({ learnings: [{ category: 'bogus', text: ' Studies Python ' }, { text: 5 }] }) } }] };
+    }) as any;
+    const learned = await proxy(request({ message: 'Study', mode: 'learn', knowledge: ['Likes tea'] }));
+    assert.deepEqual(await learned.json(), { learnings: [{ category: 'learning', text: 'Studies Python' }] });
+    OpenAI.Chat.Completions.prototype.create = (async (body: any) => {
+      assert.match(body.messages[0].content, /Likes tea/);
+      return { choices: [{ message: { content: 'ok' } }] };
+    }) as any;
+    assert.equal((await proxy(request({ message: 'Hi', knowledge: ['Likes tea'] }))).status, 200);
+  } finally {
+    OpenAI.Chat.Completions.prototype.create = original;
+    delete process.env.OPENAI_API_KEY;
+  }
+});
