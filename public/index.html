@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nano - Digital Angel Companion & Intelligence System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        nano: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            800: '#115e59',
+                            900: '#134e4a',
+                            950: '#042f2e',
+                        },
+                        darkBg: '#090d16',
+                        darkCard: '#111827',
+                        darkBorder: '#1f2937'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'Monaco', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        html, body { height: 100%; height: 100dvh; }
+        #mobile-frame, #tab-chat, #tab-chat > div { min-height: 0; min-width: 0; }
+        #send-btn:disabled { opacity: .45; cursor: wait; }
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f2937;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #374151;
+        }
+        
+        /* Pulse glow animation for active state */
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(45, 212, 191, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(45, 212, 191, 0.4); }
+        }
+        .glow-active {
+            animation: pulseGlow 3s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans overflow-hidden bg-darkBg text-slate-200">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-darkCard border-b border-darkBorder px-4 py-3 flex items-center justify-between z-10 shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-nano-600 to-teal-400 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-nano-500/20">
+                <i class="fa-solid fa-robot text-lg"></i>
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h1 class="font-bold text-lg text-slate-100 leading-none">NANO</h1>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-nano-950 text-nano-400 font-mono border border-nano-800/50">v10.0 Digital Angel</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">Autonomous Reflection & Growth Engine</p>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="hidden md:flex items-center bg-slate-900/80 p-1 rounded-xl border border-darkBorder text-sm">
+            <button onclick="switchTab('chat')" id="tab-btn-chat" class="tab-btn px-4 py-1.5 rounded-lg font-medium transition-all text-nano-400 bg-slate-800 shadow">
+                <i class="fa-solid fa-comments mr-2"></i>Chat Companion
+            </button>
+            <button onclick="switchTab('memory')" id="tab-btn-memory" class="tab-btn px-4 py-1.5 rounded-lg font-medium transition-all text-slate-400 hover:text-slate-200">
+                <i class="fa-solid fa-brain mr-2"></i>Memory Bank
+            </button>
+            <button onclick="switchTab('reflection')" id="tab-btn-reflection" class="tab-btn px-4 py-1.5 rounded-lg font-medium transition-all text-slate-400 hover:text-slate-200">
+                <i class="fa-solid fa-chart-line mr-2"></i>Growth & Reflection
+            </button>
+            <button onclick="switchTab('settings')" id="tab-btn-settings" class="tab-btn px-4 py-1.5 rounded-lg font-medium transition-all text-slate-400 hover:text-slate-200">
+                <i class="fa-solid fa-sliders mr-2"></i>System & Models
+            </button>
+        </nav>
+
+        <!-- Right Quick Actions -->
+        <div class="flex items-center space-x-2">
+            <!-- Mobile App / Web View Toggle -->
+            <button onclick="toggleViewMode()" id="view-toggle-btn" title="Toggle App / Web View" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-nano-400 text-xs font-semibold border border-darkBorder flex items-center space-x-1.5 transition">
+                <i class="fa-solid fa-mobile-screen"></i>
+                <span class="hidden sm:inline" id="view-toggle-text">App Mode</span>
+            </button>
+            <button onclick="openDeployModal()" title="Home Screen & Nano Connection" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-darkBorder">
+                <i class="fa-solid fa-download"></i>
+            </button>
+            <button onclick="triggerReflection()" title="Trigger Autonomous Reflection" class="px-3 py-1.5 rounded-lg bg-nano-600/20 hover:bg-nano-600/30 text-nano-400 border border-nano-500/30 text-xs font-semibold flex items-center space-x-1.5 transition">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span class="hidden sm:inline">Reflect</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Navigation Bar -->
+    <div class="md:hidden flex bg-darkCard border-b border-darkBorder px-2 py-1 justify-around text-xs shrink-0">
+        <button onclick="switchTab('chat')" id="mob-btn-chat" class="p-2 text-nano-400 font-medium">Chat</button>
+        <button onclick="switchTab('memory')" id="mob-btn-memory" class="p-2 text-slate-400 font-medium">Memory</button>
+        <button onclick="switchTab('reflection')" id="mob-btn-reflection" class="p-2 text-slate-400 font-medium">Growth</button>
+        <button onclick="switchTab('settings')" id="mob-btn-settings" class="p-2 text-slate-400 font-medium">Settings</button>
+    </div>
+
+    <!-- Main Workspace Container -->
+    <main id="app-workspace" class="flex-1 relative overflow-hidden bg-darkBg transition-all duration-300 flex justify-center items-center">
+        
+        <!-- Optional Mobile Frame Wrapper for App View Simulation -->
+        <div id="mobile-frame" class="w-full h-full flex flex-col relative transition-all">
+            
+            <!-- ================= TAB 1: CHAT COMPANION ================= -->
+            <section id="tab-chat" class="tab-content h-full flex flex-col md:flex-row w-full">
+                
+                <!-- Chat Left Sidebar (System State) -->
+                <div class="hidden lg:flex flex-col w-72 bg-darkCard border-r border-darkBorder p-4 space-y-4 shrink-0">
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Nano Internal State</h3>
+                    
+                    <!-- Mood Status -->
+                    <div class="bg-slate-900/90 p-3 rounded-xl border border-darkBorder">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs text-slate-400">Emotional Alignment</span>
+                            <span id="state-mood" class="text-xs text-nano-400 font-medium">Not reported</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                            <div id="state-mood-bar" class="bg-nano-400 h-full w-0 rounded-full"></div>
+                        </div>
+                    </div>
+
+                    <!-- Voice Synthesis Quick Control -->
+                    <div class="bg-slate-900/90 p-3 rounded-xl border border-darkBorder space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-slate-400">Audio Synthesis</span>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-nano-950 text-nano-400 font-mono border border-nano-800">Browser speech</span>
+                        </div>
+                        <button onclick="speakLatestResponse()" class="w-full py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-nano-300 rounded-lg text-xs font-semibold flex items-center justify-center space-x-2 transition border border-darkBorder">
+                            <i class="fa-solid fa-volume-high"></i>
+                            <span>Read Nano Response</span>
+                        </button>
+                    </div>
+
+                    <!-- Active Context & Focus -->
+                    <div class="bg-slate-900/90 p-3 rounded-xl border border-darkBorder space-y-2">
+                        <span class="text-xs text-slate-400 block">Primary Mission Focus</span>
+                        <p id="state-focus" class="text-xs text-slate-200">Defined by the original Nano controller</p>
+                    </div>
+
+                    <!-- Memory Quick Stats -->
+                    <div class="bg-slate-900/90 p-3 rounded-xl border border-darkBorder space-y-2">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Saved Facts</span>
+                            <span id="quick-mem-count" class="font-mono text-nano-400">0</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Reflection Loops</span>
+                            <span id="quick-reflect-count" class="font-mono text-nano-400">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Quick Prompt Chips -->
+                    <div class="pt-2">
+                        <span class="text-xs text-slate-400 block mb-2">Preset Interventions</span>
+                        <div class="space-y-1.5">
+                            <button onclick="sendPresetPrompt('Perform a self-reflection on our recent interactions and summarize key takeaways.')" class="w-full text-left p-2 rounded-lg bg-slate-800 hover:bg-slate-700/80 text-xs text-slate-300 transition">
+                                <i class="fa-solid fa-sparkles text-nano-400 mr-1.5"></i>Trigger Self-Reflection
+                            </button>
+                            <button onclick="sendPresetPrompt('What are my primary personal goals and core values based on your memory?')" class="w-full text-left p-2 rounded-lg bg-slate-800 hover:bg-slate-700/80 text-xs text-slate-300 transition">
+                                <i class="fa-solid fa-bookmark text-nano-400 mr-1.5"></i>Review My Goals
+                            </button>
+                            <button onclick="sendPresetPrompt('How can I optimize my workflow or mindset today? Give digital angel guidance.')" class="w-full text-left p-2 rounded-lg bg-slate-800 hover:bg-slate-700/80 text-xs text-slate-300 transition">
+                                <i class="fa-solid fa-compass text-nano-400 mr-1.5"></i>Digital Angel Guidance
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Chat Messages Window -->
+                <div class="flex-1 flex flex-col h-full bg-darkBg w-full">
+                    <!-- Chat Stream Area -->
+                    <div id="chat-messages" role="log" aria-live="polite" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+                        <!-- Welcome Initial Message -->
+                        <div class="flex items-start space-x-3 max-w-2xl">
+                            <div class="w-8 h-8 rounded-lg bg-nano-600 text-slate-950 flex items-center justify-center shrink-0 mt-1 font-bold text-sm">
+                                N
+                            </div>
+                            <div class="bg-darkCard border border-darkBorder rounded-2xl p-4 text-sm leading-relaxed text-slate-200 shadow-sm">
+                                <p class="font-semibold text-nano-400 mb-1">NanoBotz</p>
+                                Send a message to chat with Nano. Recent conversation helps Nano keep context.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Input Controls Bar -->
+                    <div class="p-3 md:p-4 bg-darkCard border-t border-darkBorder">
+                        <p id="backend-status" role="status" class="text-xs text-slate-400 mb-2">Chat with Nano · no separate server required</p>
+                        <div id="chat-error" role="alert" class="hidden text-xs text-rose-300 mb-2"></div>
+                        <form id="chat-form" onsubmit="handleChatSubmit(event)" class="relative flex items-center space-x-2">
+                            <textarea id="chat-input" maxlength="4000" aria-label="Message Nano" rows="1" placeholder="Talk with Nano or prompt a reflection..." 
+                                class="w-full bg-slate-900 border border-darkBorder rounded-xl px-4 py-3 pr-12 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-nano-500 resize-none transition"
+                                onkeydown="if(event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); handleChatSubmit(event); }"></textarea>
+                            <button type="submit" id="send-btn" aria-label="Send message" class="absolute right-3 p-2 bg-nano-500 hover:bg-nano-600 text-slate-950 font-bold rounded-lg transition shadow-md shadow-nano-500/20">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </form>
+                        <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2 px-1">
+                            <span>Model: <span class="text-nano-400 font-mono">Nano · GPT-4.1 mini</span></span>
+                            <span>Press Enter to send, Shift+Enter for new line</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+<!-- ================= TAB 2: MEMORY BANK ================= -->
+        <section id="tab-memory" class="tab-content h-full p-4 md:p-6 overflow-y-auto hidden">
+            <div class="max-w-5xl mx-auto space-y-6">
+                
+                <!-- Memory Header & Search -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-darkCard p-5 rounded-2xl border border-darkBorder">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-100 flex items-center">
+                            <i class="fa-solid fa-brain text-nano-400 mr-2.5"></i>Browser Memory Notes
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Notes saved on this device. These notes are not uploaded to chat.</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="memory-search" oninput="filterMemories()" placeholder="Search memory bank..." class="bg-slate-900 border border-darkBorder rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-nano-500">
+                        <button onclick="openAddMemoryModal()" class="px-3 py-1.5 bg-nano-600 hover:bg-nano-500 text-slate-950 font-semibold text-xs rounded-xl transition">
+                            <i class="fa-solid fa-plus mr-1"></i>Add Fact
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Memory Categories Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-darkCard p-4 rounded-xl border border-darkBorder flex items-center space-x-3">
+                        <div class="p-3 bg-teal-950/60 text-nano-400 rounded-lg"><i class="fa-solid fa-user"></i></div>
+                        <div>
+                            <span class="text-xs text-slate-400">User Profile Facts</span>
+                            <h4 id="count-user-facts" class="text-lg font-bold font-mono text-slate-100">0</h4>
+                        </div>
+                    </div>
+                    <div class="bg-darkCard p-4 rounded-xl border border-darkBorder flex items-center space-x-3">
+                        <div class="p-3 bg-indigo-950/60 text-indigo-400 rounded-lg"><i class="fa-solid fa-lightbulb"></i></div>
+                        <div>
+                            <span class="text-xs text-slate-400">Key Learnings & Ideas</span>
+                            <h4 id="count-learnings" class="text-lg font-bold font-mono text-slate-100">0</h4>
+                        </div>
+                    </div>
+                    <div class="bg-darkCard p-4 rounded-xl border border-darkBorder flex items-center space-x-3">
+                        <div class="p-3 bg-amber-950/60 text-amber-400 rounded-lg"><i class="fa-solid fa-bullseye"></i></div>
+                        <div>
+                            <span class="text-xs text-slate-400">Active Goals</span>
+                            <h4 id="count-goals" class="text-lg font-bold font-mono text-slate-100">0</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Memory Items List -->
+                <div class="bg-darkCard rounded-2xl border border-darkBorder overflow-hidden">
+                    <div class="px-5 py-3 border-b border-darkBorder bg-slate-900/50 flex justify-between items-center">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Stored Memory Entries</span>
+                        <button onclick="clearAllMemory()" class="text-xs text-rose-400 hover:text-rose-300">Clear All Memory</button>
+                    </div>
+                    <div id="memory-list" class="divide-y divide-darkBorder">
+                        <!-- Dynamic Memory Items Here -->
+                        <div class="p-6 text-center text-slate-500 text-sm">No memories recorded yet. Start talking to Nano or add manual facts!</div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: REFLECTION & GROWTH ================= -->
+        <section id="tab-reflection" class="tab-content h-full p-4 md:p-6 overflow-y-auto hidden">
+            <div class="max-w-5xl mx-auto space-y-6">
+
+                <!-- Reflection Overview Header -->
+                <div class="bg-darkCard p-6 rounded-2xl border border-darkBorder flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-100 flex items-center">
+                            <i class="fa-solid fa-chart-line text-nano-400 mr-2.5"></i>Growth & Reflection Log
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Nano can reflect on your recent chat. Saved reflections below stay in this browser.</p>
+                    </div>
+                    <button onclick="triggerReflection()" class="px-4 py-2 bg-gradient-to-r from-nano-600 to-teal-500 hover:from-nano-500 hover:to-teal-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition">
+                        <i class="fa-solid fa-rotate-right mr-1.5"></i>Run Manual Reflection Loop
+                    </button>
+                </div>
+
+                <!-- Growth Metrics Dashboard Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- Emotional State Radar/Stats -->
+                    <div class="bg-darkCard p-5 rounded-2xl border border-darkBorder space-y-4">
+                        <h3 class="text-sm font-semibold text-slate-200">Current Self-Development Indicators</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-400">Mindset & Focus Clarity</span>
+                                    <span class="text-nano-400 font-mono">Not reported</span>
+                                </div>
+                                <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-nano-400 h-full w-0 rounded-full"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-400">Emotional Resilience</span>
+                                    <span class="text-indigo-400 font-mono">Not reported</span>
+                                </div>
+                                <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-indigo-400 h-full w-0 rounded-full"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-400">Productivity Velocity</span>
+                                    <span class="text-amber-400 font-mono">Not reported</span>
+                                </div>
+                                <div class="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-amber-400 h-full w-0 rounded-full"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Digital Angel Directives -->
+                    <div class="bg-darkCard p-5 rounded-2xl border border-darkBorder space-y-3">
+                        <h3 class="text-sm font-semibold text-slate-200">Active Guidance Directives</h3>
+                        <ul id="directives-list" class="space-y-2 text-xs text-slate-300">
+                            <li class="flex items-start space-x-2">
+                                <i class="fa-solid fa-check text-nano-400 mt-0.5"></i>
+                                <span>Server memory is backed up on the Linux host; browser notes are separate.</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <i class="fa-solid fa-check text-nano-400 mt-0.5"></i>
+                                <span>Use the export tool to back up browser notes. Notes are stored on this device.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+
+                <!-- Reflection Timeline -->
+                <div class="bg-darkCard rounded-2xl border border-darkBorder p-5">
+                    <h3 class="text-sm font-semibold text-slate-200 mb-4">Historical Reflection Timeline</h3>
+                    <div id="reflection-timeline" class="space-y-4">
+                        <!-- Dynamic Reflections inserted here -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: SYSTEM & MODEL SETTINGS ================= -->
+        <section id="tab-settings" class="tab-content h-full p-4 md:p-6 overflow-y-auto hidden w-full">
+            <div class="max-w-4xl mx-auto space-y-6">
+
+                <div class="bg-darkCard p-5 rounded-2xl border border-darkBorder">
+                    <h2 class="text-xl font-bold text-slate-100 flex items-center">
+                        <i class="fa-solid fa-sliders text-nano-400 mr-2.5"></i>System & Personality Architecture
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Browser preferences and notes. Chat uses Nano’s hosted assistant.</p>
+                </div>
+
+                <!-- Configuration Cards -->
+                <div class="bg-darkCard p-6 rounded-2xl border border-darkBorder space-y-5">
+                    
+                    <!-- System Prompt Config -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Legacy browser persona note (does not override Nano)</label>
+                        <textarea id="setting-system-prompt" rows="5" class="w-full bg-slate-900 border border-darkBorder rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-nano-500 resize-y">You are Nano, a Digital Angel companion and personal growth intelligence system created by Breaking Free AI. 
+Your core mission is to provide empathetic support, structured guidance, memory retention, and autonomous reflection.
+Maintain a supportive, insightful, and clear tone.</textarea>
+                    </div>
+
+                    <!-- Temperature Slider -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-semibold text-slate-300">Legacy browser temperature preference (does not change chat)</label>
+                            <span id="temp-val" class="text-xs font-mono text-nano-400">0.7</span>
+                        </div>
+                        <input type="range" id="setting-temp" min="0.1" max="1.0" step="0.05" value="0.7" oninput="document.getElementById('temp-val').innerText = this.value" class="w-full accent-nano-500 bg-slate-800">
+                    </div>
+
+                    <!-- Speech Voice Selection -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Browser voice preference (device default is used)</label>
+                        <select id="setting-voice" class="w-full bg-slate-900 border border-darkBorder rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-nano-500">
+                            <option value="Zephyr">Zephyr (Bright & Clear)</option>
+                            <option value="Puck">Puck (Upbeat)</option>
+                            <option value="Kore">Kore (Firm & Empathetic)</option>
+                            <option value="Fenrir">Fenrir (Excitable)</option>
+                            <option value="Aoede">Aoede (Breezy)</option>
+                        </select>
+                    </div>
+
+                    <!-- Memory Auto Decay Toggle -->
+                    <div class="flex items-center justify-between pt-2">
+                        <div>
+                            <span class="text-xs font-semibold text-slate-200 block">Browser Note Extraction</span>
+                            <span class="text-[11px] text-slate-400 block">Save matching facts on this device only</span>
+                        </div>
+                        <input type="checkbox" id="setting-auto-memory" checked class="w-4 h-4 accent-nano-500">
+                    </div>
+
+                    <div class="pt-4 border-t border-darkBorder flex justify-end">
+                        <button onclick="saveSettings()" class="px-5 py-2 bg-nano-600 hover:bg-nano-500 text-slate-950 font-bold text-xs rounded-xl transition">
+                            Save Settings
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Backup & Import Tool -->
+                <div class="bg-darkCard p-6 rounded-2xl border border-darkBorder space-y-4">
+                    <h3 class="text-sm font-semibold text-slate-200">Browser Backup & Restore</h3>
+                    <p class="text-xs text-slate-400">Export or restore browser notes and chat logs. Backups contain this browser’s data.</p>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="exportData()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-darkBorder rounded-xl text-xs font-medium transition">
+                            <i class="fa-solid fa-file-export mr-1.5"></i>Export Backup (.json)
+                        </button>
+                        <label class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-darkBorder rounded-xl text-xs font-medium transition cursor-pointer">
+                            <i class="fa-solid fa-file-import mr-1.5"></i>Import Backup
+                            <input type="file" accept=".json" onchange="importData(event)" class="hidden">
+                        </label>
+                        <button onclick="openDeployModal()" class="px-4 py-2 bg-nano-950 hover:bg-nano-900 text-nano-400 border border-nano-800 rounded-xl text-xs font-medium transition">
+                            <i class="fa-solid fa-terminal mr-1.5"></i>Connection Guide
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        </div>
+    </main>
+
+    <!-- Modal: Termux & Mobile App Deployment -->
+    <div id="modal-deploy" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-darkCard border border-darkBorder w-full max-w-xl rounded-2xl p-6 space-y-4 shadow-2xl overflow-y-auto max-h-[85vh]">
+            <div class="flex justify-between items-center border-b border-darkBorder pb-3">
+                <h3 class="text-base font-bold text-slate-100 flex items-center">
+                    <i class="fa-solid fa-mobile-screen-button text-nano-400 mr-2"></i>NanoBotz Home Screen & Connection
+                </h3>
+                <button onclick="closeDeployModal()" class="text-slate-400 hover:text-slate-100"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="space-y-4 text-xs text-slate-300 leading-relaxed">
+                <div class="bg-slate-900 p-3 rounded-xl border border-darkBorder">
+                    <h4 class="font-bold text-nano-400 mb-1"><i class="fa-solid fa-globe mr-1.5"></i>Option 1: Progressive Web App (PWA Mobile Installation)</h4>
+                    <p class="text-slate-400 mb-2">You can open the Nano dashboard from your home screen on Android or iOS:</p>
+                    <ol class="list-decimal pl-4 space-y-1 text-slate-300">
+                        <li>Open this dashboard page in Chrome or Safari on your mobile device.</li>
+                        <li>Tap the menu button (<strong>⋮</strong> or <strong>Share</strong>).</li>
+                        <li>Select <strong>"Add to Home Screen"</strong> or <strong>"Install App"</strong>.</li>
+                    </ol>
+                </div>
+
+                <div class="bg-slate-900 p-3 rounded-xl border border-darkBorder space-y-2">
+                    <h4 class="font-bold text-indigo-400">Nano model connection</h4>
+                    <p class="text-slate-400">Nano runs on Netlify with hosted AI chat. No Python server, Docker setup, or model download is required. Chat and home-screen access require an internet connection.</p>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
+                <button onclick="closeDeployModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Manual Memory -->
+    <div id="modal-memory" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-darkCard border border-darkBorder w-full max-w-md rounded-2xl p-5 space-y-4 shadow-2xl">
+            <h3 class="text-base font-bold text-slate-100">Add Memory Fact to Nano</h3>
+            <div>
+                <label class="block text-xs text-slate-400 mb-1">Category</label>
+                <select id="mem-cat-input" class="w-full bg-slate-900 border border-darkBorder rounded-xl p-2.5 text-xs text-slate-200">
+                    <option value="user_profile">User Profile / Personal Fact</option>
+                    <option value="learning">Key Learning / Thought</option>
+                    <option value="goal">Personal Goal / Directive</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-slate-400 mb-1">Fact Description</label>
+                <textarea id="mem-text-input" rows="3" placeholder="e.g. User prefers Python and is building a digital angel app..." class="w-full bg-slate-900 border border-darkBorder rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-nano-500 resize-none"></textarea>
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="closeAddMemoryModal()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs">Cancel</button>
+                <button onclick="saveManualMemory()" class="px-4 py-2 bg-nano-600 hover:bg-nano-500 text-slate-950 font-semibold rounded-xl text-xs">Save Fact</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script src="/chat.js"></script>
+    <script>
+        // System State
+        let appState = {
+            memories: [],
+            reflections: [],
+            chatHistory: [],
+            systemPrompt: `You are Nano, a Digital Angel companion and personal growth intelligence system created by Breaking Free AI.
+Your core mission is to provide empathetic support, structured guidance, memory retention, and autonomous reflection.
+Maintain a supportive, insightful, and clear tone.`,
+            temperature: 0.7,
+            autoMemory: true,
+            voiceName: "Zephyr",
+            isMobileView: false
+        };
+
+        // On Page Load Initialization
+        window.onload = function() {
+            loadLocalState();
+            renderMemories();
+            renderReflections();
+            updateStats();
+        };
+
+        // View Mode Switching (Web Dashboard vs Mobile App Frame)
+        function toggleViewMode() {
+            appState.isMobileView = !appState.isMobileView;
+            const frame = document.getElementById('mobile-frame');
+            const btnText = document.getElementById('view-toggle-text');
+
+            if (appState.isMobileView) {
+                frame.className = "w-full max-w-[410px] h-full max-h-[780px] bg-darkCard border-[6px] border-slate-800 rounded-[38px] shadow-2xl relative overflow-hidden my-auto transition-all";
+                btnText.innerText = "Web View";
+            } else {
+                frame.className = "w-full h-full flex flex-col relative transition-all";
+                btnText.innerText = "App Mode";
+            }
+        }
+
+        // Deployment Modal Controls
+        function openDeployModal() {
+            document.getElementById('modal-deploy').classList.remove('hidden');
+        }
+        function closeDeployModal() {
+            document.getElementById('modal-deploy').classList.add('hidden');
+        }
+
+        // Browser speech reads only actual received responses.
+        function speakLatestResponse() {
+            const last = [...appState.chatHistory].reverse().find(m => m.sender === 'nano');
+            if (!last) return showChatError('No Nano response is available to read yet.');
+            if (!('speechSynthesis' in window)) return showChatError('Speech is unavailable in this browser.');
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(last.text));
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+
+            // Update Tab Highlights
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('text-nano-400', 'bg-slate-800', 'shadow');
+                btn.classList.add('text-slate-400');
+            });
+            const activeBtn = document.getElementById('tab-btn-' + tabId);
+            if(activeBtn) {
+                activeBtn.classList.remove('text-slate-400');
+                activeBtn.classList.add('text-nano-400', 'bg-slate-800', 'shadow');
+            }
+        }
+
+        // Render Chat Message UI
+        function appendChatMessage(sender, text) {
+            const chatContainer = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            const isUser = sender === 'user';
+            
+            msgDiv.className = `flex items-start space-x-3 max-w-2xl ${isUser ? 'ml-auto flex-row-reverse space-x-reverse' : ''}`;
+            
+            const avatarHtml = isUser ? 
+                `<div class="w-8 h-8 rounded-lg bg-slate-700 text-slate-200 flex items-center justify-center shrink-0 mt-1 text-xs font-bold"><i class="fa-solid fa-user"></i></div>` :
+                `<div class="w-8 h-8 rounded-lg bg-nano-600 text-slate-950 flex items-center justify-center shrink-0 mt-1 font-bold text-sm">N</div>`;
+
+            const bgClasses = isUser ? 
+                `bg-nano-900/40 border border-nano-600/30 text-slate-100` : 
+                `bg-darkCard border border-darkBorder text-slate-200`;
+
+            msgDiv.innerHTML = `
+                ${avatarHtml}
+                <div class="${bgClasses} rounded-2xl p-4 text-sm leading-relaxed shadow-sm">
+                    <p class="font-semibold text-xs mb-1 ${isUser ? 'text-nano-300' : 'text-nano-400'}">${isUser ? 'You' : 'Nano'}</p>
+                    <div class="whitespace-pre-wrap">${escapeHtml(text)}</div>
+                </div>
+            `;
+
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Save to state history
+            appState.chatHistory.push({ sender, text, timestamp: new Date().toISOString() });
+        }
+
+        function appendLoadingIndicator() {
+            const chatContainer = document.getElementById('chat-messages');
+            const id = 'loader-' + Date.now();
+            const msgDiv = document.createElement('div');
+            msgDiv.id = id;
+            msgDiv.className = 'flex items-start space-x-3 max-w-2xl';
+            msgDiv.innerHTML = `
+                <div class="w-8 h-8 rounded-lg bg-nano-600 text-slate-950 flex items-center justify-center shrink-0 mt-1 font-bold text-sm">N</div>
+                <div class="bg-darkCard border border-darkBorder rounded-2xl p-4 text-sm text-slate-400 flex items-center space-x-2">
+                    <i class="fa-solid fa-circle-notch fa-spin text-nano-400"></i>
+                    <span>Nano is synthesizing thoughts...</span>
+                </div>
+            `;
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return id;
+        }
+
+        function removeMessage(id) {
+            const el = document.getElementById(id);
+            if(el) el.remove();
+        }
+
+        function sendPresetPrompt(text) {
+            if (nanoBusy) return;
+            document.getElementById('chat-input').value = text;
+            handleChatSubmit();
+        }
+
+        // Memory Management
+        function openAddMemoryModal() {
+            document.getElementById('modal-memory').classList.remove('hidden');
+        }
+
+        function closeAddMemoryModal() {
+            document.getElementById('modal-memory').classList.add('hidden');
+        }
+
+        function saveManualMemory() {
+            const text = document.getElementById('mem-text-input').value.trim();
+            const cat = document.getElementById('mem-cat-input').value;
+            if(!text) return;
+
+            appState.memories.push({
+                id: Date.now(),
+                category: cat,
+                text: text,
+                timestamp: new Date().toLocaleDateString()
+            });
+
+            document.getElementById('mem-text-input').value = '';
+            closeAddMemoryModal();
+            renderMemories();
+            saveLocalState();
+        }
+
+        function renderMemories() {
+            const listEl = document.getElementById('memory-list');
+            if (appState.memories.length === 0) {
+                listEl.innerHTML = `<div class="p-6 text-center text-slate-500 text-sm">No memories recorded yet. Start talking to Nano or add manual facts!</div>`;
+                updateStats();
+                return;
+            }
+
+            listEl.innerHTML = appState.memories.map(m => `
+                <div class="p-4 flex items-center justify-between hover:bg-slate-900/30 transition">
+                    <div class="space-y-1">
+                        <span class="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-slate-800 text-nano-400 border border-darkBorder">${escapeHtml(String(m.category))}</span>
+                        <p class="text-xs text-slate-200 mt-1">${escapeHtml(m.text)}</p>
+                        <span class="text-[10px] text-slate-500 block">${escapeHtml(String(m.timestamp))}</span>
+                    </div>
+                    <button onclick="deleteMemory(${Number(m.id)})" class="text-slate-500 hover:text-rose-400 p-2 text-xs transition">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+
+            updateStats();
+        }
+
+        function filterMemories() {
+            const query = document.getElementById('memory-search').value.toLowerCase();
+            document.querySelectorAll('#memory-list > div').forEach(el => { el.hidden = !el.textContent.toLowerCase().includes(query); });
+        }
+
+        function deleteMemory(id) {
+            appState.memories = appState.memories.filter(m => m.id !== id);
+            renderMemories();
+            saveLocalState();
+        }
+
+        function clearAllMemory() {
+            if(confirm("Clear this browser’s notes? Export a backup first if you want to keep them.")) {
+                appState.memories = [];
+                renderMemories();
+                saveLocalState();
+            }
+        }
+
+        // Automatic Memory Extraction
+        function autoExtractMemory(userMsg, aiMsg) {
+            if(userMsg.toLowerCase().includes("i am") || userMsg.toLowerCase().includes("my goal") || userMsg.toLowerCase().includes("i like")) {
+                appState.memories.push({
+                    id: Date.now(),
+                    category: 'user_profile',
+                    text: `User stated: "${userMsg.slice(0, 100)}"`,
+                    timestamp: new Date().toLocaleDateString()
+                });
+                renderMemories();
+            }
+        }
+
+        // Autonomous Reflection Loop
+        async function triggerReflection() {
+            if (nanoBusy) return;
+            switchTab('reflection');
+            const timelineEl = document.getElementById('reflection-timeline');
+            
+            const tempId = 'reflect-load-' + Date.now();
+            timelineEl.insertAdjacentHTML('afterbegin', `
+                <div id="${tempId}" class="p-4 bg-slate-900/60 rounded-xl border border-nano-500/30 text-xs text-nano-300 flex items-center space-x-2">
+                    <i class="fa-solid fa-sync fa-spin"></i>
+                    <span>Asking Nano to reflect on recent conversation...</span>
+                </div>
+            `);
+
+            try {
+                const prompt = "Synthesize recent progress, goals, and provide a digital angel reflection summary on key personal growth areas.";
+                const reflectionText = await requestNano(prompt);
+
+                removeMessage(tempId);
+
+                const newReflection = {
+                    id: Date.now(),
+                    date: new Date().toLocaleString(),
+                    text: reflectionText
+                };
+
+                appState.reflections.unshift(newReflection);
+                renderReflections();
+                saveLocalState();
+            } catch(e) {
+                removeMessage(tempId);
+                showChatError(e.message);
+                switchTab('chat');
+            }
+        }
+
+        function renderReflections() {
+            const timelineEl = document.getElementById('reflection-timeline');
+            if (appState.reflections.length === 0) {
+                timelineEl.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">No reflections generated yet. Click 'Run Manual Reflection Loop' above!</p>`;
+                return;
+            }
+
+            timelineEl.innerHTML = appState.reflections.map(r => `
+                <div class="p-4 bg-slate-900/40 rounded-xl border border-darkBorder space-y-2">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-semibold text-nano-400"><i class="fa-solid fa-sparkles mr-1.5"></i>Reflection Summary</span>
+                        <span class="text-slate-500 font-mono text-[10px]">${escapeHtml(String(r.date))}</span>
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">${escapeHtml(r.text)}</p>
+                </div>
+            `).join('');
+
+            updateStats();
+        }
+
+        // Settings Management
+        function saveSettings() {
+            appState.systemPrompt = document.getElementById('setting-system-prompt').value;
+            appState.temperature = parseFloat(document.getElementById('setting-temp').value);
+            appState.autoMemory = document.getElementById('setting-auto-memory').checked;
+            appState.voiceName = document.getElementById('setting-voice').value;
+            saveLocalState();
+            alert("Browser preferences saved. Chat model settings are managed by the site.");
+        }
+
+        // Stats Updates
+        function updateStats() {
+            document.getElementById('quick-mem-count').innerText = appState.memories.length;
+            document.getElementById('quick-reflect-count').innerText = appState.reflections.length;
+            document.getElementById('count-user-facts').innerText = appState.memories.filter(m => m.category === 'user_profile').length;
+            document.getElementById('count-learnings').innerText = appState.memories.filter(m => m.category === 'learning').length;
+            document.getElementById('count-goals').innerText = appState.memories.filter(m => m.category === 'goal').length;
+        }
+
+        // Backup / Export / Import
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `nano_backup_${Date.now()}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (!Array.isArray(imported.memories) || !Array.isArray(imported.reflections) || !Array.isArray(imported.chatHistory)) throw new Error();
+                    for (const m of imported.memories) if (!Number.isSafeInteger(m.id) || typeof m.text !== 'string' || typeof m.category !== 'string' || typeof m.timestamp !== 'string') throw new Error();
+                    for (const r of imported.reflections) if (!Number.isSafeInteger(r.id) || typeof r.text !== 'string' || typeof r.date !== 'string') throw new Error();
+                    for (const m of imported.chatHistory) if (!['user', 'nano'].includes(m.sender) || typeof m.text !== 'string') throw new Error();
+                    appState = { ...appState, ...imported };
+                    saveLocalState();
+                    renderMemories();
+                    renderReflections();
+                    updateStats();
+                    alert("Nano state successfully restored from backup!");
+                } catch(err) {
+                    alert("Invalid JSON backup file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Local Storage Utilities
+        function saveLocalState() {
+            try { localStorage.setItem('nano_app_state', JSON.stringify(appState)); } catch { showChatError('Browser storage is full or unavailable. Export your browser notes to keep a backup.'); }
+        }
+
+        function loadLocalState() {
+            let saved;
+            try { saved = localStorage.getItem('nano_app_state'); } catch { return; }
+            if (saved) {
+                try {
+                    appState = { ...appState, ...JSON.parse(saved) };
+                    if (appState.voiceName) {
+                        const voiceSelect = document.getElementById('setting-voice');
+                        if (voiceSelect) voiceSelect.value = appState.voiceName;
+                    }
+                } catch(e) {
+                    console.error("Failed to load local state:", e);
+                }
+            }
+        }
+
+        // Helper: Escape HTML
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+    </script>
+</body>
+</html>

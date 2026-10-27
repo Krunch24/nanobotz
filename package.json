@@ -1,0 +1,18 @@
+{
+  "name": "nanobotz",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit && node --check public/chat.js",
+    "test": "tsx --test tests/proxy.test.ts tests/frontend.test.ts"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^6.0.3",
+    "@types/node": "^22.15.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "openai": "^7.45.0"
+  }
+}
