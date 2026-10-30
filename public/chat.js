@@ -27,6 +27,13 @@ async function nanoFetch(query = '', body) {
     return data;
 }
 
+// Notes Nano learned in Singularity mode, sent as background context when enabled.
+function singularityKnowledge(force = false) {
+    const s = appState.singularity;
+    if (!s || !s.enabled || (!s.useKnowledge && !force) || !Array.isArray(s.knowledge)) return [];
+    return s.knowledge.slice(-40).map(item => String(item.text).slice(0, 300));
+}
+
 async function requestNano(message) {
     if (nanoBusy) throw new Error('Nano is already working on a message.');
     nanoBusy = true;
@@ -50,6 +57,18 @@ async function requestNano(message) {
         }
         if (data.status === 'failed') throw new Error(data.error || 'Python/Llama generation failed.');
         if (data.status !== 'completed') throw new Error('Nano returned an invalid job status.');
+        const history = (appState.chatHistory || []).slice(-13);
+        // The submit handler already appended the current user message.
+        if (history.at(-1)?.sender === 'user' && history.at(-1).text === message) history.pop();
+        const knowledge = singularityKnowledge();
+        const data = await nanoFetch('', {
+            message,
+            ...(knowledge.length ? { knowledge } : {}),
+            history: history.slice(-12).map(item => ({
+                role: item.sender === 'nano' ? 'assistant' : 'user',
+                content: item.text.slice(0, 4000),
+            })),
+        });
         if (typeof data.response !== 'string' || !data.response.trim()) throw new Error('Nano returned an empty response.');
         return data.response;
     } finally {
@@ -75,6 +94,7 @@ async function handleChatSubmit(event) {
         appendChatMessage('nano', response);
         if (appState.autoMemory && message.length > 20) autoExtractMemory(message, response);
         saveLocalState();
+        if (typeof onNanoExchange === 'function') onNanoExchange();
     } catch (error) {
         // Transport failures are interface errors, never fabricated Nano messages.
         showChatError(error.message);

@@ -76,6 +76,13 @@
                 <i class="fa-solid fa-robot text-lg"></i>
             </div>
             <h1 class="font-bold text-lg text-slate-100 leading-none">NanoBotz</h1>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h1 class="font-bold text-lg text-slate-100 leading-none">NANO</h1>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-nano-950 text-nano-400 font-mono border border-nano-800/50">v10.0</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">Autonomous Reflection & Growth Engine</p>
+            </div>
         </div>
 
         <!-- Navigation Tabs -->
@@ -88,6 +95,9 @@
             </button>
             <button onclick="switchTab('reflection')" id="tab-btn-reflection" class="tab-btn px-4 py-1.5 rounded-lg font-medium transition-all text-slate-400 hover:text-slate-200">
                 <i class="fa-solid fa-chart-line mr-2"></i>Growth & Reflection
+            </button>
+            <button onclick="switchTab('singularity')" id="tab-btn-singularity" class="tab-btn px-4 py-1.5 rounded-lg font-medium transition-all text-slate-400 hover:text-slate-200">
+                <i class="fa-solid fa-atom mr-2"></i>Singularity
             </button>
             <button onclick="switchTab('settings')" id="tab-btn-settings" class="tab-btn px-4 py-1.5 rounded-lg font-medium transition-all text-slate-400 hover:text-slate-200">
                 <i class="fa-solid fa-sliders mr-2"></i>System & Models
@@ -105,6 +115,11 @@
                 <i class="fa-solid fa-download"></i>
             </button>
             <button onclick="triggerReflection()" title="Reflect on Recent Chat" class="px-3 py-1.5 rounded-lg bg-nano-600/20 hover:bg-nano-600/30 text-nano-400 border border-nano-500/30 text-xs font-semibold flex items-center space-x-1.5 transition">
+            <button onclick="switchTab('singularity')" id="sing-header-btn" title="Singularity: let Nano learn on its own" class="px-3 py-1.5 rounded-lg bg-fuchsia-600/20 hover:bg-fuchsia-600/30 text-fuchsia-300 border border-fuchsia-500/30 text-xs font-semibold flex items-center space-x-1.5 transition">
+                <i class="fa-solid fa-atom"></i>
+                <span class="hidden sm:inline">Singularity</span>
+            </button>
+            <button onclick="triggerReflection()" title="Trigger Autonomous Reflection" class="px-3 py-1.5 rounded-lg bg-nano-600/20 hover:bg-nano-600/30 text-nano-400 border border-nano-500/30 text-xs font-semibold flex items-center space-x-1.5 transition">
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
                 <span class="hidden sm:inline">Reflect</span>
             </button>
@@ -116,6 +131,7 @@
         <button onclick="switchTab('chat')" id="mob-btn-chat" class="p-2 text-nano-400 font-medium">Chat</button>
         <button onclick="switchTab('memory')" id="mob-btn-memory" class="p-2 text-slate-400 font-medium">Memory</button>
         <button onclick="switchTab('reflection')" id="mob-btn-reflection" class="p-2 text-slate-400 font-medium">Growth</button>
+        <button onclick="switchTab('singularity')" id="mob-btn-singularity" class="p-2 text-slate-400 font-medium">Singularity</button>
         <button onclick="switchTab('settings')" id="mob-btn-settings" class="p-2 text-slate-400 font-medium">Settings</button>
     </div>
 
@@ -159,6 +175,7 @@
                     <div class="bg-slate-900/90 p-3 rounded-xl border border-darkBorder space-y-2">
                         <span class="text-xs text-slate-400 block">Primary Mission Focus</span>
                         <p id="state-focus" class="text-xs text-slate-200">Managed by your Python controller</p>
+                        <p id="state-focus" class="text-xs text-slate-200">Guided by your conversation and curiosity topics</p>
                     </div>
 
                     <!-- Memory Quick Stats -->
@@ -368,6 +385,76 @@
             </div>
         </section>
 
+        <!-- ================= TAB: SINGULARITY (SELF-LEARNING) ================= -->
+        <section id="tab-singularity" class="tab-content h-full p-4 md:p-6 overflow-y-auto hidden w-full">
+            <div class="max-w-4xl mx-auto space-y-6">
+
+                <div class="bg-darkCard p-6 rounded-2xl border border-fuchsia-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-100 flex items-center">
+                            <i class="fa-solid fa-atom text-fuchsia-300 mr-2.5"></i>Singularity
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1 max-w-md">When active, Nano learns on its own: it pulls lessons from your conversations, studies your curiosity topics while this page is open, and uses what it learned in future chats. Learned knowledge stays in this browser.</p>
+                        <p class="text-xs text-slate-400 mt-1 max-w-md">When active, Nano keeps learning notes: it pulls lessons from your conversations, studies your curiosity topics while this page is open, and uses what it learned in future chats. Learned knowledge is saved privately for this browser on Netlify.</p>
+                    </div>
+                    <button onclick="toggleSingularity()" id="sing-toggle" aria-pressed="false" class="px-5 py-3 bg-gradient-to-r from-fuchsia-600 to-nano-500 hover:from-fuchsia-500 hover:to-nano-400 text-slate-950 font-bold text-sm rounded-xl shadow-lg transition flex items-center gap-2">
+                        <i class="fa-solid fa-power-off"></i><span id="sing-toggle-label">Activate Singularity</span>
+                    </button>
+                </div>
+
+                <div class="bg-darkCard p-6 rounded-2xl border border-darkBorder space-y-5">
+                    <h3 class="text-sm font-semibold text-slate-200">Self-Learning Settings</h3>
+                    <label class="flex items-center justify-between gap-4">
+                        <span><span class="text-xs font-semibold text-slate-200 block">Learn from conversations</span><span class="text-[11px] text-slate-400 block">Every two exchanges, Nano extracts what it learned about you and your goals</span></span>
+                        <input type="checkbox" id="sing-learn-chat" class="w-4 h-4 accent-fuchsia-500">
+                    </label>
+                    <label class="flex items-center justify-between gap-4">
+                        <span><span class="text-xs font-semibold text-slate-200 block">Autonomous self-study</span><span class="text-[11px] text-slate-400 block">Nano studies your curiosity topics on a schedule while this page is open</span></span>
+                        <input type="checkbox" id="sing-self-study" class="w-4 h-4 accent-fuchsia-500">
+                    </label>
+                    <label class="flex items-center justify-between gap-4">
+                        <span><span class="text-xs font-semibold text-slate-200 block">Use learned knowledge in chat</span><span class="text-[11px] text-slate-400 block">Send Nano’s 40 most recent learnings with each message</span></span>
+                        <input type="checkbox" id="sing-use-knowledge" class="w-4 h-4 accent-fuchsia-500">
+                    </label>
+                    <div>
+                        <label for="sing-topics" class="block text-xs font-semibold text-slate-300 mb-1.5">Curiosity topics</label>
+                        <textarea id="sing-topics" rows="3" maxlength="1000" placeholder="e.g. habit building, stoicism, Python, sleep science" class="w-full bg-slate-900 border border-darkBorder rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-fuchsia-500 resize-y"></textarea>
+                    </div>
+                    <div>
+                        <label for="sing-interval" class="block text-xs font-semibold text-slate-300 mb-1.5">Self-study frequency</label>
+                        <select id="sing-interval" class="w-full bg-slate-900 border border-darkBorder rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-fuchsia-500">
+                            <option value="5">Every 5 minutes</option>
+                            <option value="15">Every 15 minutes</option>
+                            <option value="30">Every 30 minutes</option>
+                            <option value="60">Every hour</option>
+                        </select>
+                    </div>
+                    <div class="pt-4 border-t border-darkBorder flex flex-wrap items-center justify-between gap-3">
+                        <p id="sing-status" role="status" class="text-xs text-slate-400"></p>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="runLearningCycle('study')" class="sing-action px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-fuchsia-300 border border-darkBorder rounded-xl text-xs font-medium transition"><i class="fa-solid fa-book-open mr-1.5"></i>Study Now</button>
+                            <button onclick="runLearningCycle('chat')" class="sing-action px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-fuchsia-300 border border-darkBorder rounded-xl text-xs font-medium transition"><i class="fa-solid fa-comments mr-1.5"></i>Learn From Chat</button>
+                            <button onclick="saveSingularitySettings()" class="px-5 py-2 bg-fuchsia-500 hover:bg-fuchsia-400 text-slate-950 font-bold text-xs rounded-xl transition">Save Settings</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-darkCard rounded-2xl border border-darkBorder overflow-hidden">
+                    <div class="px-5 py-3 border-b border-darkBorder bg-slate-900/50 flex justify-between items-center">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Learned Knowledge (<span id="sing-count">0</span>)</span>
+                        <button onclick="clearKnowledge()" class="text-xs text-rose-400 hover:text-rose-300">Erase All</button>
+                    </div>
+                    <div id="sing-knowledge" class="divide-y divide-darkBorder max-h-96 overflow-y-auto"></div>
+                </div>
+
+                <div class="bg-darkCard rounded-2xl border border-darkBorder p-5">
+                    <h3 class="text-sm font-semibold text-slate-200 mb-3">Learning Activity</h3>
+                    <ul id="sing-log" class="space-y-1.5 text-xs text-slate-300"></ul>
+                </div>
+
+            </div>
+        </section>
+
         <!-- ================= TAB 4: SYSTEM & MODEL SETTINGS ================= -->
         <section id="tab-settings" class="tab-content h-full p-4 md:p-6 overflow-y-auto hidden w-full">
             <div class="max-w-4xl mx-auto space-y-6">
@@ -386,6 +473,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-300 mb-1.5">Legacy browser persona note (does not override Nano)</label>
                         <textarea id="setting-system-prompt" rows="5" class="w-full bg-slate-900 border border-darkBorder rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-nano-500 resize-y">You are Nano, the AI assistant for NanoBotz. 
+                        <textarea id="setting-system-prompt" rows="5" class="w-full bg-slate-900 border border-darkBorder rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-nano-500 resize-y">You are Nano, the AI assistant for NanoBotz.
 Provide helpful answers and practical guidance. Help users reflect on their goals when asked.
 Maintain a supportive, insightful, and clear tone.</textarea>
                     </div>
@@ -526,8 +614,11 @@ Maintain a supportive, insightful, and clear tone.`,
         };
 
         // On Page Load Initialization
-        window.onload = function() {
+        window.onload = async function() {
             loadLocalState();
+            await loadSingularityState();
+            renderSingularity();
+            scheduleSelfStudy();
             renderMemories();
             renderReflections();
             updateStats();
@@ -826,6 +917,8 @@ Maintain a supportive, insightful, and clear tone.`,
                     renderMemories();
                     renderReflections();
                     updateStats();
+                    renderSingularity();
+                    scheduleSelfStudy();
                     alert("Nano state successfully restored from backup!");
                 } catch(err) {
                     alert("Invalid JSON backup file.");
@@ -836,7 +929,7 @@ Maintain a supportive, insightful, and clear tone.`,
 
         // Local Storage Utilities
         function saveLocalState() {
-            try { localStorage.setItem('nano_app_state', JSON.stringify(appState)); } catch { showChatError('Browser storage is full or unavailable. Export your browser notes to keep a backup.'); }
+            try { localStorage.setItem('nano_app_state', JSON.stringify({ ...appState, singularity: undefined })); saveSingularityState(); } catch { showChatError('Browser storage is full or unavailable. Export your browser notes to keep a backup.'); }
         }
 
         function loadLocalState() {
@@ -862,5 +955,6 @@ Maintain a supportive, insightful, and clear tone.`,
             });
         }
     </script>
+    <script src="/singularity.js"></script>
 </body>
 </html>

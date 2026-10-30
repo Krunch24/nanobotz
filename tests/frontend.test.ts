@@ -83,3 +83,44 @@ test('chat submits to Python and polls the same job with a stable session', asyn
   assert.equal(await vm.runInContext("requestNano('next')", result.context), 'Llama reply');
   assert.equal(calls, 2);
 });
+
+test('singularity mode sends learned knowledge with chat', async () => {
+  const result = setup(async (_url, init) => {
+    assert.deepEqual(JSON.parse(String(init?.body)).knowledge, ['Likes tea']);
+    return Response.json({ response: 'ok' });
+  });
+  result.context.appState.chatHistory = [];
+  result.context.appState.singularity = { enabled: true, useKnowledge: true, knowledge: [{ text: 'Likes tea' }] };
+  assert.equal(await vm.runInContext("requestNano('hi')", result.context), 'ok');
+test('chat includes learned context only when Singularity knowledge is enabled', async () => {
+  const bodies: any[] = [];
+  const result = setup(async (_url, init) => {
+    bodies.push(JSON.parse(String(init?.body)));
+    return Response.json({ response: 'Reply' });
+  });
+  result.context.appState.singularity = { enabled: true, useKnowledge: true, knowledge: [{ text: 'Prefers examples' }] };
+  await vm.runInContext("requestNano('Hello')", result.context);
+  assert.deepEqual(bodies[0].knowledge, ['Prefers examples']);
+  result.context.appState.singularity.enabled = false;
+  await vm.runInContext("requestNano('Hello again')", result.context);
+  assert.equal('knowledge' in bodies[1], false);
+});
+
+test('a learning cycle retains notes and pauses when Singularity is disabled', async () => {
+  let calls = 0;
+  const nodes: Record<string, any> = {};
+  const context = vm.createContext({
+    appState: {}, document: { getElementById: (id: string) => nodes[id] ||= { textContent: '', classList: { toggle() {} }, setAttribute() {} }, querySelectorAll: () => [] },
+    saveLocalState() {}, singularityKnowledge: () => [], escapeHtml: (s: string) => s,
+    nanoFetch: async () => { calls++; return { learnings: [{ category: 'topic', text: 'One useful note' }] }; },
+    clearInterval() {}, setInterval() {},
+  });
+  vm.runInContext(readFileSync('public/singularity.js', 'utf8'), context);
+  await vm.runInContext("runLearningCycle('study')", context);
+  assert.equal(calls, 0);
+  vm.runInContext('singularityStorageReady = true; sing().enabled = true', context);
+  await vm.runInContext("runLearningCycle('study')", context);
+  assert.equal(calls, 1);
+  assert.equal(context.appState.singularity.knowledge[0].text, 'One useful note');
+  assert.equal(context.appState.singularity.log.length, 1);
+});
