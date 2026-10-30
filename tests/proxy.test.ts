@@ -40,24 +40,23 @@ test('returns real SDK output and sanitizes inference errors without Python conf
   }
 });
 
-test('learn mode returns sanitized learnings and chat includes learned knowledge', async () => {
+test('learning uses bounded knowledge context and validates structured notes', async () => {
   process.env.OPENAI_API_KEY = 'synthetic-test-fixture';
   const original = OpenAI.Chat.Completions.prototype.create;
   try {
-    assert.equal((await proxy(request({ message: 'Hi', knowledge: ['x'.repeat(301)] }))).status, 400);
-    assert.equal((await proxy(request({ message: 'Hi', mode: 'other' }))).status, 400);
+    for (const body of [{ message: 'Hi', knowledge: ['x'.repeat(301)] }, { message: 'Hi', mode: 'unknown' }]) {
+      assert.equal((await proxy(request(body))).status, 400);
+    }
     OpenAI.Chat.Completions.prototype.create = (async (body: any) => {
-      assert.deepEqual(body.response_format, { type: 'json_object' });
-      assert.match(body.messages[0].content, /Likes tea/);
-      return { choices: [{ message: { content: JSON.stringify({ learnings: [{ category: 'bogus', text: ' Studies Python ' }, { text: 5 }] }) } }] };
+      assert.equal(body.response_format.type, 'json_object');
+      assert.ok(body.messages.some((m: any) => m.content.includes('Prefers short answers')));
+      return { choices: [{ message: { content: JSON.stringify({ learnings: [{ category: 'preference', text: 'Likes examples' }, { category: 'bad', text: null }] }) } }] };
     }) as any;
-    const learned = await proxy(request({ message: 'Study', mode: 'learn', knowledge: ['Likes tea'] }));
-    assert.deepEqual(await learned.json(), { learnings: [{ category: 'learning', text: 'Studies Python' }] });
-    OpenAI.Chat.Completions.prototype.create = (async (body: any) => {
-      assert.match(body.messages[0].content, /Likes tea/);
-      return { choices: [{ message: { content: 'ok' } }] };
-    }) as any;
-    assert.equal((await proxy(request({ message: 'Hi', knowledge: ['Likes tea'] }))).status, 200);
+    const response = await proxy(request({ mode: 'learn', message: 'Learn from chat', knowledge: ['Prefers short answers'] }));
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { learnings: [{ category: 'preference', text: 'Likes examples' }] });
+    OpenAI.Chat.Completions.prototype.create = (async () => ({ choices: [{ message: { content: 'invalid JSON' } }] })) as any;
+    assert.equal((await proxy(request({ mode: 'learn', message: 'Study' }))).status, 502);
   } finally {
     OpenAI.Chat.Completions.prototype.create = original;
     delete process.env.OPENAI_API_KEY;

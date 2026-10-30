@@ -1,4 +1,5 @@
 /* Singularity mode: Nano learns on its own and keeps what it learns in this browser. */
+/* Singularity mode: Nano learns on its own and saves learning notes on Netlify for this browser. */
 const SINGULARITY_DEFAULTS = {
     enabled: false, learnFromChat: true, useKnowledge: true, selfStudy: true,
     topics: '', intervalMinutes: 15, knowledge: [], log: [], exchanges: 0,
@@ -10,6 +11,10 @@ let studyTimer = null;
 function sing() {
     const current = appState.singularity && typeof appState.singularity === 'object' ? appState.singularity : {};
     const s = { ...SINGULARITY_DEFAULTS, ...current };
+    const s = current;
+    for (const [key, value] of Object.entries(SINGULARITY_DEFAULTS)) {
+        if (!(key in s)) s[key] = Array.isArray(value) ? [] : value;
+    }
     if (!Array.isArray(s.knowledge)) s.knowledge = [];
     if (!Array.isArray(s.log)) s.log = [];
     appState.singularity = s;
@@ -28,6 +33,7 @@ function setSingularityStatus(text) {
 
 function toggleSingularity() {
     const s = sing();
+    if (!singularityStorageReady) return setSingularityStatus('Reload to reconnect learning storage first.');
     s.enabled = !s.enabled;
     logSingularity(s.enabled ? 'Singularity mode activated.' : 'Singularity mode paused.');
     saveLocalState();
@@ -70,6 +76,7 @@ function onNanoExchange() {
 async function runLearningCycle(source) {
     const s = sing();
     if (learningBusy) return;
+    if (learningBusy || !s.enabled || !singularityStorageReady) return;
     learningBusy = true;
     document.querySelectorAll('.sing-action').forEach(btn => { btn.disabled = true; });
     setSingularityStatus(source === 'study' ? 'Nano is studying on its own…' : 'Nano is learning from your conversation…');
@@ -112,6 +119,7 @@ function deleteKnowledge(id) {
 
 function clearKnowledge() {
     if (!confirm('Erase everything Nano has learned in this browser?')) return;
+    if (!confirm('Erase all saved learning notes for this browser?')) return;
     sing().knowledge = [];
     logSingularity('Learned knowledge erased.');
     saveLocalState();
@@ -154,3 +162,30 @@ window.addEventListener('load', () => {
     renderSingularity();
     scheduleSelfStudy();
 });
+let singularitySaveQueue = Promise.resolve();
+let singularityStorageReady = false;
+
+async function loadSingularityState() {
+    try {
+        const response = await fetch('/api/singularity-state', { credentials: 'same-origin' });
+        if (!response.ok) throw new Error();
+        const data = await response.json();
+        if (data.state) appState.singularity = data.state;
+        singularityStorageReady = true;
+        // Transfer any learning notes from an older browser backup on its next save.
+        if (!data.state && appState.singularity) saveSingularityState();
+    } catch {
+        setSingularityStatus('Learning storage is unavailable. Reload to reconnect before learning.');
+    }
+}
+
+function saveSingularityState() {
+    if (!singularityStorageReady || !appState.singularity) return;
+    const body = JSON.stringify({ state: appState.singularity });
+    singularitySaveQueue = singularitySaveQueue.then(async () => {
+        const response = await fetch('/api/singularity-state', {
+            method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body,
+        });
+        if (!response.ok) throw new Error();
+    }).catch(() => setSingularityStatus('Learning notes could not be saved. Export a backup and try again.'));
+}
