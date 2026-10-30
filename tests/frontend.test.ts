@@ -10,7 +10,7 @@ function setup(fetch: typeof globalThis.fetch) {
     classList: { add() {}, remove() {} }, setAttribute() {}, focus() {} };
   const messages: { role: string; text: string }[] = [];
   const context = vm.createContext({ crypto: webcrypto, localStorage: { getItem() {}, setItem() {} },
-    document: { getElementById: nodes, addEventListener() {} }, fetch, AbortSignal, URLSearchParams,
+    document: { getElementById: nodes, addEventListener() {} }, fetch, AbortSignal, URLSearchParams, Date,
     setTimeout: (fn: () => void) => setTimeout(fn, 0), clearTimeout, setInterval() {},
     appendChatMessage: (role: string, text: string) => messages.push({ role, text }),
     appendLoadingIndicator: () => 'loader', removeMessage() {}, appState: { autoMemory: false }, saveLocalState() {},
@@ -24,7 +24,7 @@ test('chat submits once and displays only actual returned text', async () => {
   const setupResult = setup(async (_input, init) => {
     assert.equal(init?.method, 'POST');
     submissions++;
-    return Response.json({ response: 'SYNTHETIC UI CONTRACT RESULT' });
+    return Response.json({ status: 'completed', response: 'SYNTHETIC UI CONTRACT RESULT' });
   });
   setupResult.nodes('chat-input').value = 'test input';
   await Promise.all([vm.runInContext('handleChatSubmit()', setupResult.context), vm.runInContext('handleChatSubmit()', setupResult.context)]);
@@ -55,7 +55,7 @@ test('page has unique IDs and scripts parse', () => {
 
 
 test('empty responses restore controls without a fabricated reply', async () => {
-  const result = setup(async () => Response.json({ response: '' }));
+  const result = setup(async () => Response.json({ status: 'completed', response: '' }));
   result.nodes('chat-input').value = 'test input';
   await vm.runInContext('handleChatSubmit()', result.context);
   assert.match(result.nodes('chat-error').textContent, /empty response/);
@@ -63,14 +63,25 @@ test('empty responses restore controls without a fabricated reply', async () => 
   assert.equal(result.messages.length, 1);
 });
 
-test('chat sends recent context without a Python session or polling', async () => {
-  const result = setup(async (_url, init) => {
-    const body = JSON.parse(String(init?.body));
-    assert.deepEqual(body, { message: 'next', history: [{ role: 'assistant', content: 'Earlier reply' }] });
-    return Response.json({ response: 'Next reply' });
+test('chat submits to Python and polls the same job with a stable session', async () => {
+  let calls = 0;
+  let session: string;
+  const result = setup(async (url, init) => {
+    calls++;
+    if (init?.method === 'POST') {
+      const body = JSON.parse(String(init.body));
+      assert.equal(body.message, 'next');
+      assert.equal(body.history, undefined);
+      session = body.sessionId;
+      assert.ok(body.requestId);
+      return Response.json({ status: 'queued', jobId: 'job-123' });
+    }
+    assert.ok(String(url).includes('sessionId=' + session));
+    assert.ok(String(url).includes('jobId=job-123'));
+    return Response.json({ status: 'completed', response: 'Llama reply' });
   });
-  result.context.appState.chatHistory = [{ sender: 'nano', text: 'Earlier reply' }];
-  assert.equal(await vm.runInContext("requestNano('next')", result.context), 'Next reply');
+  assert.equal(await vm.runInContext("requestNano('next')", result.context), 'Llama reply');
+  assert.equal(calls, 2);
 });
 
 test('singularity mode sends learned knowledge with chat', async () => {

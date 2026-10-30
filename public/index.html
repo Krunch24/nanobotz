@@ -75,6 +75,7 @@
             <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-nano-600 to-teal-400 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-nano-500/20">
                 <i class="fa-solid fa-robot text-lg"></i>
             </div>
+            <h1 class="font-bold text-lg text-slate-100 leading-none">NanoBotz</h1>
             <div>
                 <div class="flex items-center space-x-2">
                     <h1 class="font-bold text-lg text-slate-100 leading-none">NANO</h1>
@@ -87,7 +88,7 @@
         <!-- Navigation Tabs -->
         <nav class="hidden md:flex items-center bg-slate-900/80 p-1 rounded-xl border border-darkBorder text-sm">
             <button onclick="switchTab('chat')" id="tab-btn-chat" class="tab-btn px-4 py-1.5 rounded-lg font-medium transition-all text-nano-400 bg-slate-800 shadow">
-                <i class="fa-solid fa-comments mr-2"></i>Chat Companion
+                <i class="fa-solid fa-comments mr-2"></i>Chat
             </button>
             <button onclick="switchTab('memory')" id="tab-btn-memory" class="tab-btn px-4 py-1.5 rounded-lg font-medium transition-all text-slate-400 hover:text-slate-200">
                 <i class="fa-solid fa-brain mr-2"></i>Memory Bank
@@ -113,6 +114,7 @@
             <button onclick="openDeployModal()" title="Home Screen & Nano Connection" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-darkBorder">
                 <i class="fa-solid fa-download"></i>
             </button>
+            <button onclick="triggerReflection()" title="Reflect on Recent Chat" class="px-3 py-1.5 rounded-lg bg-nano-600/20 hover:bg-nano-600/30 text-nano-400 border border-nano-500/30 text-xs font-semibold flex items-center space-x-1.5 transition">
             <button onclick="switchTab('singularity')" id="sing-header-btn" title="Singularity: let Nano learn on its own" class="px-3 py-1.5 rounded-lg bg-fuchsia-600/20 hover:bg-fuchsia-600/30 text-fuchsia-300 border border-fuchsia-500/30 text-xs font-semibold flex items-center space-x-1.5 transition">
                 <i class="fa-solid fa-atom"></i>
                 <span class="hidden sm:inline">Singularity</span>
@@ -139,7 +141,7 @@
         <!-- Optional Mobile Frame Wrapper for App View Simulation -->
         <div id="mobile-frame" class="w-full h-full flex flex-col relative transition-all">
             
-            <!-- ================= TAB 1: CHAT COMPANION ================= -->
+            <!-- ================= TAB 1: CHAT ================= -->
             <section id="tab-chat" class="tab-content h-full flex flex-col md:flex-row w-full">
                 
                 <!-- Chat Left Sidebar (System State) -->
@@ -172,6 +174,7 @@
                     <!-- Active Context & Focus -->
                     <div class="bg-slate-900/90 p-3 rounded-xl border border-darkBorder space-y-2">
                         <span class="text-xs text-slate-400 block">Primary Mission Focus</span>
+                        <p id="state-focus" class="text-xs text-slate-200">Managed by your Python controller</p>
                         <p id="state-focus" class="text-xs text-slate-200">Guided by your conversation and curiosity topics</p>
                     </div>
 
@@ -222,7 +225,7 @@
 
                     <!-- Chat Input Controls Bar -->
                     <div class="p-3 md:p-4 bg-darkCard border-t border-darkBorder">
-                        <p id="backend-status" role="status" class="text-xs text-slate-400 mb-2">Chat with Nano · no separate server required</p>
+                        <p id="backend-status" role="status" class="text-xs text-slate-400 mb-2">Chat with Nano · Python + Llama</p>
                         <div id="chat-error" role="alert" class="hidden text-xs text-rose-300 mb-2"></div>
                         <form id="chat-form" onsubmit="handleChatSubmit(event)" class="relative flex items-center space-x-2">
                             <textarea id="chat-input" maxlength="4000" aria-label="Message Nano" rows="1" placeholder="Talk with Nano or prompt a reflection..." 
@@ -233,7 +236,7 @@
                             </button>
                         </form>
                         <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2 px-1">
-                            <span>Model: <span class="text-nano-400 font-mono">Nano · GPT-4.1 mini</span></span>
+                            <span>Model: <span class="text-nano-400 font-mono">Llama · Python controller</span></span>
                             <span>Press Enter to send, Shift+Enter for new line</span>
                         </div>
                     </div>
@@ -460,7 +463,7 @@
                     <h2 class="text-xl font-bold text-slate-100 flex items-center">
                         <i class="fa-solid fa-sliders text-nano-400 mr-2.5"></i>System & Personality Architecture
                     </h2>
-                    <p class="text-xs text-slate-400 mt-1">Browser preferences and notes. Chat uses Nano’s hosted assistant.</p>
+                    <p class="text-xs text-slate-400 mt-1">Browser preferences and notes. Chat uses your Python controller and Llama.</p>
                 </div>
 
                 <!-- Configuration Cards -->
@@ -469,6 +472,7 @@
                     <!-- System Prompt Config -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-300 mb-1.5">Legacy browser persona note (does not override Nano)</label>
+                        <textarea id="setting-system-prompt" rows="5" class="w-full bg-slate-900 border border-darkBorder rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-nano-500 resize-y">You are Nano, the AI assistant for NanoBotz. 
                         <textarea id="setting-system-prompt" rows="5" class="w-full bg-slate-900 border border-darkBorder rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-nano-500 resize-y">You are Nano, the AI assistant for NanoBotz.
 Provide helpful answers and practical guidance. Help users reflect on their goals when asked.
 Maintain a supportive, insightful, and clear tone.</textarea>
@@ -559,7 +563,7 @@ Maintain a supportive, insightful, and clear tone.</textarea>
 
                 <div class="bg-slate-900 p-3 rounded-xl border border-darkBorder space-y-2">
                     <h4 class="font-bold text-indigo-400">Nano model connection</h4>
-                    <p class="text-slate-400">Nano runs on Netlify with hosted AI chat. No Python server, Docker setup, or model download is required. Chat and home-screen access require an internet connection.</p>
+                    <p class="text-slate-400">This dashboard connects to your running Python backend and Llama model through a secure Netlify proxy. Keep your backend online for chat and reflections. Hosted AI is not used.</p>
                 </div>
             </div>
 
