@@ -73,6 +73,14 @@ test('chat sends recent context without a Python session or polling', async () =
   assert.equal(await vm.runInContext("requestNano('next')", result.context), 'Next reply');
 });
 
+test('singularity mode sends learned knowledge with chat', async () => {
+  const result = setup(async (_url, init) => {
+    assert.deepEqual(JSON.parse(String(init?.body)).knowledge, ['Likes tea']);
+    return Response.json({ response: 'ok' });
+  });
+  result.context.appState.chatHistory = [];
+  result.context.appState.singularity = { enabled: true, useKnowledge: true, knowledge: [{ text: 'Likes tea' }] };
+  assert.equal(await vm.runInContext("requestNano('hi')", result.context), 'ok');
 test('chat includes learned context only when Singularity knowledge is enabled', async () => {
   const bodies: any[] = [];
   const result = setup(async (_url, init) => {

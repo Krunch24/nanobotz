@@ -1,3 +1,4 @@
+/* Singularity mode: Nano learns on its own and keeps what it learns in this browser. */
 /* Singularity mode: Nano learns on its own and saves learning notes on Netlify for this browser. */
 const SINGULARITY_DEFAULTS = {
     enabled: false, learnFromChat: true, useKnowledge: true, selfStudy: true,
@@ -9,6 +10,7 @@ let studyTimer = null;
 
 function sing() {
     const current = appState.singularity && typeof appState.singularity === 'object' ? appState.singularity : {};
+    const s = { ...SINGULARITY_DEFAULTS, ...current };
     const s = current;
     for (const [key, value] of Object.entries(SINGULARITY_DEFAULTS)) {
         if (!(key in s)) s[key] = Array.isArray(value) ? [] : value;
@@ -73,6 +75,7 @@ function onNanoExchange() {
 
 async function runLearningCycle(source) {
     const s = sing();
+    if (learningBusy) return;
     if (learningBusy || !s.enabled || !singularityStorageReady) return;
     learningBusy = true;
     document.querySelectorAll('.sing-action').forEach(btn => { btn.disabled = true; });
@@ -115,6 +118,7 @@ function deleteKnowledge(id) {
 }
 
 function clearKnowledge() {
+    if (!confirm('Erase everything Nano has learned in this browser?')) return;
     if (!confirm('Erase all saved learning notes for this browser?')) return;
     sing().knowledge = [];
     logSingularity('Learned knowledge erased.');
@@ -154,6 +158,10 @@ function renderSingularity() {
         : '<li class="text-slate-500">No activity yet.</li>';
 }
 
+window.addEventListener('load', () => {
+    renderSingularity();
+    scheduleSelfStudy();
+});
 let singularitySaveQueue = Promise.resolve();
 let singularityStorageReady = false;
 

@@ -12,6 +12,9 @@ Run `npm ci`, `npm run check` and `npm test`. Use `netlify dev --port 8889` for 
 
 The files under `backend/`, the Python scripts and Docker configuration are retained as optional legacy tools. They are not part of website startup or deployment and do not need to be configured. Their dependencies are needed only if you explicitly run those legacy tools.
 
+## Singularity mode
+
+The Singularity tab (also reachable from the header button) lets Nano learn on its own. When activated, Nano extracts learnings from every two chat exchanges, runs scheduled self-study sessions on the user's curiosity topics while the page is open, and sends its 40 most recent learnings as background context with each chat. Learned knowledge is stored in the browser alongside other notes and included in backups; it can be reviewed, deleted or erased from the tab. Learning uses `/api/nano` with `mode: "learn"`.
 ## Combined preview features
 
 The consolidated interface includes Singularity controls, conversation learning, scheduled study while the page is open, knowledge review/deletion, backups, reflections, and the NanoBotz branding cleanup. Singularity uses the same hosted AI Gateway endpoint as chat. It creates reusable notes from model responses; it does not retrain the model or browse the web. Up to 40 recent learning notes are sent with chat when enabled. Learning is opt-in and uses AI credits.
