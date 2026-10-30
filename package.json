@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "tsc --noEmit && node --check public/chat.js",
+    "check": "tsc --noEmit && node --check public/chat.js && node --check public/singularity.js",
     "test": "tsx --test tests/proxy.test.ts tests/frontend.test.ts"
   },
   "devDependencies": {
@@ -13,6 +13,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@netlify/database": "^2.0.1",
     "openai": "^7.45.0"
   }
 }
