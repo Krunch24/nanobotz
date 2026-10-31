@@ -12,7 +12,7 @@ Browser notes, chat logs, reflections, and preferences retain their local storag
 
 When enabled, Nano extracts learning notes after every two successful chat exchanges and studies curiosity topics at the selected interval while the page is open. This uses model knowledge rather than web browsing or model training. Up to 40 recent learning notes are included with chat when knowledge use is enabled.
 
-Learning notes and Singularity settings are saved in Netlify Database, scoped to an anonymous secure browser cookie. Clearing cookies loses access unless a backup was exported. The existing database migration is applied during deployment. Learning pauses when storage is unavailable. Notes can be reviewed, deleted, exported, and restored through the dashboard.
+Learning notes and Singularity settings are saved in Netlify Database, scoped to an anonymous secure browser cookie. Clearing cookies loses access unless a backup was exported. The existing database migration is applied during deployment. Learning pauses when storage is unavailable. Activation and learning buttons retry the storage connection without requiring a reload. A learning cycle reports success only after its notes are saved; failed saves retain notes on the current page for backup or retry. Notes can be reviewed, deleted, exported, and restored through the dashboard.
 
 ## Development
 

@@ -926,7 +926,7 @@ Maintain a supportive, insightful, and clear tone.`,
 
         // Local Storage Utilities
         function saveLocalState() {
-            try { localStorage.setItem('nano_app_state', JSON.stringify({ ...appState, singularity: undefined })); saveSingularityState(); } catch { showChatError('Browser storage is full or unavailable. Export your browser notes to keep a backup.'); }
+            try { localStorage.setItem('nano_app_state', JSON.stringify({ ...appState, singularity: undefined })); saveSingularityState().catch(() => {}); } catch { showChatError('Browser storage is full or unavailable. Export your browser notes to keep a backup.'); }
         }
 
         function loadLocalState() {

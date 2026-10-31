@@ -19,6 +19,7 @@ async function nanoFetch(query = '', body) {
     } catch {
         throw new Error('Nano server is unreachable or the request timed out. Check your connection and try again.');
     }
+    if (response.status === 404) throw new Error('Nano’s AI endpoint is missing from this deployment. Publish the updated site and reload.');
     let data;
     try { data = await response.json(); } catch {
         throw new Error('Nano returned an invalid server response. Contact the site owner.');

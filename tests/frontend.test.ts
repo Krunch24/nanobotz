@@ -99,21 +99,116 @@ test('chat includes learned context only when Singularity knowledge is enabled',
   assert.equal('knowledge' in bodies[1], false);
 });
 
-test('a learning cycle retains notes and pauses when Singularity is disabled', async () => {
-  let calls = 0;
+function learningSetup(fetch: typeof globalThis.fetch) {
   const nodes: Record<string, any> = {};
+  const actions = [{ disabled: false }, { disabled: false }];
   const context = vm.createContext({
-    window: { addEventListener() {} }, appState: {}, document: { getElementById: (id: string) => nodes[id] ||= { textContent: '', classList: { toggle() {} }, setAttribute() {} }, querySelectorAll: () => [] },
-    saveLocalState() {}, singularityKnowledge: () => [], escapeHtml: (s: string) => s,
-    nanoFetch: async () => { calls++; return { learnings: [{ category: 'topic', text: 'One useful note' }] }; },
+    appState: { chatHistory: [] }, AbortSignal, fetch,
+    document: { addEventListener() {}, getElementById: (id: string) => nodes[id] ||= {
+      textContent: '', value: '', classList: { toggle() {} }, setAttribute() {},
+    }, querySelectorAll: () => actions },
+    saveLocalState() {}, escapeHtml: (s: string) => s,
     clearInterval() {}, setInterval() {},
   });
+  vm.runInContext(readFileSync('public/chat.js', 'utf8'), context);
   vm.runInContext(readFileSync('public/singularity.js', 'utf8'), context);
-  await vm.runInContext("runLearningCycle('study')", context);
-  assert.equal(calls, 0);
-  vm.runInContext('singularityStorageReady = true; sing().enabled = true', context);
-  await vm.runInContext("runLearningCycle('study')", context);
-  assert.equal(calls, 1);
-  assert.equal(context.appState.singularity.knowledge[0].text, 'One useful note');
-  assert.equal(context.appState.singularity.log.length, 1);
+  return { context, nodes, actions };
+}
+
+test('activation loads storage, studies through the HTTP endpoint, and saves notes before reporting success', async () => {
+  const calls: string[] = [];
+  let saved: any;
+  const result = learningSetup(async (url, init) => {
+    calls.push(`${init?.method || 'GET'} ${url}`);
+    if (url === '/api/nano') {
+      const body = JSON.parse(String(init?.body));
+      assert.equal(body.mode, 'learn');
+      assert.deepEqual(body.history, []);
+      return Response.json({ learnings: [{ category: 'topic', text: 'One useful note' }] });
+    }
+    if (init?.method === 'PUT') {
+      saved = JSON.parse(String(init.body)).state;
+      assert.doesNotMatch(result.nodes['sing-status'].textContent, /^Learned/);
+      return Response.json({ saved: true });
+    }
+    return Response.json({ state: null });
+  });
+  await vm.runInContext('toggleSingularity()', result.context);
+  assert.deepEqual(calls, ['GET /api/singularity-state', 'POST /api/nano', 'PUT /api/singularity-state']);
+  assert.equal(saved.knowledge[0].text, 'One useful note');
+  assert.equal(saved.knowledge[0].source, 'study');
+  assert.match(result.nodes['sing-status'].textContent, /^Learned 1/);
+  assert.ok(result.actions.every(b => !b.disabled));
+  const reloaded = learningSetup(async () => Response.json({ state: saved }));
+  await vm.runInContext('loadSingularityState();', reloaded.context);
+  assert.equal(reloaded.context.appState.singularity.knowledge[0].text, 'One useful note');
+  assert.equal(reloaded.context.appState.singularity.enabled, true);
+});
+
+test('activation retries storage after a failed initial load', async () => {
+  let reads = 0;
+  const result = learningSetup(async (url) => {
+    if (url === '/api/singularity-state') {
+      reads++;
+      return reads === 1 ? Response.json({}, { status: 503 }) : Response.json({ state: null });
+    }
+    return Response.json({ learnings: [] });
+  });
+  await vm.runInContext('loadSingularityState()', result.context);
+  assert.match(result.nodes['sing-status'].textContent, /unavailable/);
+  vm.runInContext('sing().selfStudy = false', result.context);
+  await vm.runInContext('toggleSingularity()', result.context);
+  assert.equal(reads, 2);
+  assert.equal(result.context.appState.singularity.enabled, true);
+});
+
+test('failed persistence retains notes, reports failure and permits the next cycle', async () => {
+  let writes = 0;
+  const result = learningSetup(async (url, init) => {
+    if (url === '/api/nano') return Response.json({ learnings: [{ category: 'topic', text: 'A note' }] });
+    if (init?.method === 'PUT') {
+      writes++;
+      return Response.json({}, { status: writes === 1 ? 503 : 200 });
+    }
+    return Response.json({ state: null });
+  });
+  await vm.runInContext('toggleSingularity()', result.context);
+  assert.match(result.nodes['sing-status'].textContent, /could not be saved/);
+  assert.equal(result.context.appState.singularity.knowledge.length, 1);
+  assert.ok(result.actions.every(b => !b.disabled));
+  await vm.runInContext("runLearningCycle('study')", result.context);
+  assert.equal(writes, 2);
+  assert.equal(result.context.appState.singularity.knowledge.length, 1);
+  assert.match(result.nodes['sing-status'].textContent, /Nothing new/);
+});
+
+test('learning explains missing deployments and does not fabricate notes', async () => {
+  const result = learningSetup(async url => url === '/api/nano'
+    ? new Response('Not found', { status: 404 }) : Response.json({ state: null }));
+  await vm.runInContext('toggleSingularity()', result.context);
+  assert.match(result.nodes['sing-status'].textContent, /missing from this deployment/);
+  assert.equal(result.context.appState.singularity.knowledge.length, 0);
+  assert.ok(result.actions.every(b => !b.disabled));
+});
+
+test('conversation learning runs every second exchange and stops when paused', async () => {
+  let inferences = 0;
+  const result = learningSetup(async (url, init) => {
+    if (url === '/api/nano') {
+      inferences++;
+      const body = JSON.parse(String(init?.body));
+      assert.deepEqual(body.history, [{ role: 'user', content: 'My goal is better sleep' }]);
+      return Response.json({ learnings: [{ category: 'goal', text: 'Wants better sleep' }] });
+    }
+    return Response.json({ state: null });
+  });
+  vm.runInContext('sing().selfStudy = false', result.context);
+  await vm.runInContext('toggleSingularity()', result.context);
+  result.context.appState.chatHistory.push({ sender: 'user', text: 'My goal is better sleep' });
+  await vm.runInContext('onNanoExchange()', result.context);
+  assert.equal(inferences, 0);
+  await vm.runInContext('onNanoExchange()', result.context);
+  assert.equal(inferences, 1);
+  await vm.runInContext('toggleSingularity(); onNanoExchange(); onNanoExchange()', result.context);
+  assert.equal(inferences, 1);
 });
