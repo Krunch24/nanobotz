@@ -1,4 +1,3 @@
-/* Singularity mode: Nano learns on its own and keeps what it learns in this browser. */
 /* Singularity mode: Nano learns on its own and saves learning notes on Netlify for this browser. */
 const SINGULARITY_DEFAULTS = {
     enabled: false, learnFromChat: true, useKnowledge: true, selfStudy: true,
@@ -10,7 +9,6 @@ let studyTimer = null;
 
 function sing() {
     const current = appState.singularity && typeof appState.singularity === 'object' ? appState.singularity : {};
-    const s = { ...SINGULARITY_DEFAULTS, ...current };
     const s = current;
     for (const [key, value] of Object.entries(SINGULARITY_DEFAULTS)) {
         if (!(key in s)) s[key] = Array.isArray(value) ? [] : value;
@@ -31,15 +29,15 @@ function setSingularityStatus(text) {
     document.getElementById('sing-status').textContent = text;
 }
 
-function toggleSingularity() {
+async function toggleSingularity() {
+    if (!singularityStorageReady && !await loadSingularityState()) return;
     const s = sing();
-    if (!singularityStorageReady) return setSingularityStatus('Reload to reconnect learning storage first.');
     s.enabled = !s.enabled;
     logSingularity(s.enabled ? 'Singularity mode activated.' : 'Singularity mode paused.');
     saveLocalState();
     scheduleSelfStudy();
     renderSingularity();
-    if (s.enabled && s.selfStudy) runLearningCycle('study');
+    if (s.enabled && s.selfStudy) await runLearningCycle('study');
 }
 
 function saveSingularitySettings() {
@@ -70,42 +68,53 @@ function onNanoExchange() {
     const s = sing();
     if (!s.enabled || !s.learnFromChat) return;
     s.exchanges = (s.exchanges || 0) + 1;
-    if (s.exchanges % 2 === 0) runLearningCycle('chat');
+    if (s.exchanges % 2 === 0) return runLearningCycle('chat');
 }
 
 async function runLearningCycle(source) {
     const s = sing();
     if (learningBusy) return;
-    if (learningBusy || !s.enabled || !singularityStorageReady) return;
+    if (!s.enabled) return setSingularityStatus('Activate Singularity before starting a learning cycle.');
     learningBusy = true;
     document.querySelectorAll('.sing-action').forEach(btn => { btn.disabled = true; });
     setSingularityStatus(source === 'study' ? 'Nano is studying on its own…' : 'Nano is learning from your conversation…');
-    const topics = s.topics || "the user's goals, wellbeing and personal growth";
-    const message = source === 'study'
-        ? `Self-study session. Choose one of these curiosity topics that the learned notes cover least, and learn something new and practical about it: ${topics}`
-        : `Learn from the recent conversation. Curiosity topics for context: ${topics}`;
-    const history = source === 'study' ? [] : (appState.chatHistory || []).slice(-12).map(item => ({
-        role: item.sender === 'nano' ? 'assistant' : 'user', content: String(item.text).slice(0, 4000),
-    }));
     try {
+        if (!singularityStorageReady && !await loadSingularityState()) return;
+        // Reconnection must not replace notes or settings during a pending cycle.
+        if (!sing().enabled) return setSingularityStatus('Activate Singularity before starting a learning cycle.');
+        const topics = sing().topics || "the user's goals, wellbeing and personal growth";
+        const message = source === 'study'
+            ? `Self-study session. Choose one of these curiosity topics that the learned notes cover least, and learn something new and practical about it: ${topics}`
+            : `Learn from the recent conversation. Curiosity topics for context: ${topics}`;
+        const history = source === 'study' ? [] : (appState.chatHistory || []).slice(-12).map(item => ({
+            role: item.sender === 'nano' ? 'assistant' : 'user', content: String(item.text).slice(0, 4000),
+        }));
         const knowledge = singularityKnowledge(true);
         const data = await nanoFetch('', { mode: 'learn', message, history, ...(knowledge.length ? { knowledge } : {}) });
-        const known = new Set(s.knowledge.map(k => k.text.toLowerCase()));
-        const fresh = (Array.isArray(data.learnings) ? data.learnings : [])
-            .filter(item => typeof item.text === 'string' && !known.has(item.text.toLowerCase()));
+        if (!data || !Array.isArray(data.learnings)) throw new Error('Nano returned invalid learning notes. Try the learning cycle again.');
+        const state = sing();
+        const known = new Set(state.knowledge.map(k => k.text.toLowerCase()));
+        const fresh = data.learnings.filter(item => {
+            if (!item || typeof item.text !== 'string' || !item.text.trim()) return false;
+            const key = item.text.trim().toLowerCase();
+            if (known.has(key)) return false;
+            known.add(key);
+            return true;
+        }).slice(0, 5).map(item => ({ text: item.text.trim().slice(0, 300), category: String(item.category || 'insight').slice(0, 40) }));
         for (const item of fresh) {
-            s.knowledge.push({ id: Date.now() + Math.floor(Math.random() * 1000), category: item.category, text: item.text, source, timestamp: new Date().toLocaleString() });
+            state.knowledge.push({ id: Date.now() + Math.floor(Math.random() * 1000), category: item.category, text: item.text, source, timestamp: new Date().toLocaleString() });
         }
-        s.knowledge = s.knowledge.slice(-MAX_KNOWLEDGE);
+        state.knowledge = state.knowledge.slice(-MAX_KNOWLEDGE);
         const summary = fresh.length ? `Learned ${fresh.length} new thing${fresh.length === 1 ? '' : 's'} from ${source === 'study' ? 'self-study' : 'conversation'}.` : 'Nothing new to learn this cycle.';
         logSingularity(summary);
+        renderSingularity();
+        await saveSingularityState();
         setSingularityStatus(summary);
     } catch (error) {
         logSingularity('Learning cycle failed: ' + error.message);
         setSingularityStatus(error.message);
     } finally {
         learningBusy = false;
-        saveLocalState();
         renderSingularity();
     }
 }
@@ -118,7 +127,6 @@ function deleteKnowledge(id) {
 }
 
 function clearKnowledge() {
-    if (!confirm('Erase everything Nano has learned in this browser?')) return;
     if (!confirm('Erase all saved learning notes for this browser?')) return;
     sing().knowledge = [];
     logSingularity('Learned knowledge erased.');
@@ -158,34 +166,44 @@ function renderSingularity() {
         : '<li class="text-slate-500">No activity yet.</li>';
 }
 
-window.addEventListener('load', () => {
-    renderSingularity();
-    scheduleSelfStudy();
-});
 let singularitySaveQueue = Promise.resolve();
 let singularityStorageReady = false;
+let singularityInitialized = false;
 
 async function loadSingularityState() {
     try {
-        const response = await fetch('/api/singularity-state', { credentials: 'same-origin' });
+        const response = await fetch('/api/singularity-state', { credentials: 'same-origin', signal: AbortSignal.timeout(15000) });
         if (!response.ok) throw new Error();
         const data = await response.json();
-        if (data.state) appState.singularity = data.state;
+        if (data.state && !singularityInitialized) appState.singularity = data.state;
+        singularityInitialized = true;
         singularityStorageReady = true;
-        // Transfer any learning notes from an older browser backup on its next save.
-        if (!data.state && appState.singularity) saveSingularityState();
+        sing();
+        return true;
     } catch {
-        setSingularityStatus('Learning storage is unavailable. Reload to reconnect before learning.');
+        singularityStorageReady = false;
+        setSingularityStatus('Learning storage is unavailable. Try Activate Singularity or a learning button to reconnect.');
+        return false;
     }
 }
 
 function saveSingularityState() {
-    if (!singularityStorageReady || !appState.singularity) return;
+    if (!singularityStorageReady || !appState.singularity) return Promise.resolve(false);
     const body = JSON.stringify({ state: appState.singularity });
-    singularitySaveQueue = singularitySaveQueue.then(async () => {
+    const pending = singularitySaveQueue.then(async () => {
         const response = await fetch('/api/singularity-state', {
             method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body,
+            signal: AbortSignal.timeout(15000),
         });
-        if (!response.ok) throw new Error();
-    }).catch(() => setSingularityStatus('Learning notes could not be saved. Export a backup and try again.'));
+        if (!response.ok) {
+            if (response.status === 401) singularityStorageReady = false;
+            throw new Error('Learning notes could not be saved. Export a backup and try again.');
+        }
+        return true;
+    });
+    // Keep later saves possible after an error, while callers can await this save.
+    singularitySaveQueue = pending.catch(() => {
+        setSingularityStatus('Learning notes could not be saved. Export a backup and try again.');
+    });
+    return pending;
 }
