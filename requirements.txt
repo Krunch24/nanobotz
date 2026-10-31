@@ -1,4 +1,3 @@
-fastapi==0.115.12
-uvicorn==0.34.2
-httpx==0.28.1
-anyio<4
+# Legacy Python backend support intentionally removed from the active Netlify build.
+# This repository uses the browser + Netlify Functions flow only.
+# The file is retained only for historical reference and is not part of the website runtime.

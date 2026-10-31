@@ -18,4 +18,4 @@ Learning notes and Singularity settings are saved in Netlify Database, scoped to
 
 Run `npm ci`, `npm run check`, and `npm test`. Use `netlify dev --port 8889` for local Netlify emulation. Netlify publishes `public/` and deploys `netlify/functions/`; no frontend build command is required.
 
-The Python backend, scripts, and Docker configuration are retained as optional legacy tools. They are not used by the website and do not need configuration for website deployment.
+This project is a Netlify-hosted frontend and serverless-function app. The legacy Python backend, Docker, and local model runner are intentionally not part of the active build, deployment, or runtime path.
