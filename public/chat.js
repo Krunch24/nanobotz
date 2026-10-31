@@ -1,4 +1,4 @@
-/* Chat proxies to the existing Python controller and Llama backend. */
+/* Chat, reflections and learning use Netlify AI Gateway. */
 let nanoBusy = false;
 
 function showChatError(message) {
@@ -41,22 +41,6 @@ async function requestNano(message) {
     button.disabled = true;
     document.getElementById('chat-form').setAttribute('aria-busy', 'true');
     try {
-        let sessionId;
-        try { sessionId = localStorage.getItem('nano_python_session'); } catch {}
-        if (!/^[A-Za-z0-9_-]{16,128}$/.test(sessionId || '')) {
-            sessionId = crypto.randomUUID();
-            try { localStorage.setItem('nano_python_session', sessionId); } catch {}
-        }
-        let data = await nanoFetch('', { message, sessionId, requestId: crypto.randomUUID() });
-        const jobId = data.jobId;
-        const deadline = Date.now() + 660000;
-        while (data.status === 'queued' || data.status === 'running') {
-            if (Date.now() >= deadline) throw new Error('Llama is still processing. Please wait before sending another message.');
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            data = await nanoFetch('?' + new URLSearchParams({ sessionId, jobId }));
-        }
-        if (data.status === 'failed') throw new Error(data.error || 'Python/Llama generation failed.');
-        if (data.status !== 'completed') throw new Error('Nano returned an invalid job status.');
         const history = (appState.chatHistory || []).slice(-13);
         // The submit handler already appended the current user message.
         if (history.at(-1)?.sender === 'user' && history.at(-1).text === message) history.pop();
@@ -106,5 +90,5 @@ async function handleChatSubmit(event) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('backend-status').textContent = 'Chat with Nano · Python + Llama';
+    document.getElementById('backend-status').textContent = 'Chat with Nano · Hosted AI';
 });

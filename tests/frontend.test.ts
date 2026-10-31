@@ -63,25 +63,17 @@ test('empty responses restore controls without a fabricated reply', async () => 
   assert.equal(result.messages.length, 1);
 });
 
-test('chat submits to Python and polls the same job with a stable session', async () => {
-  let calls = 0;
-  let session: string;
+test('hosted chat sends recent conversation once without repeating the current message', async () => {
   const result = setup(async (url, init) => {
-    calls++;
-    if (init?.method === 'POST') {
-      const body = JSON.parse(String(init.body));
-      assert.equal(body.message, 'next');
-      assert.equal(body.history, undefined);
-      session = body.sessionId;
-      assert.ok(body.requestId);
-      return Response.json({ status: 'queued', jobId: 'job-123' });
-    }
-    assert.ok(String(url).includes('sessionId=' + session));
-    assert.ok(String(url).includes('jobId=job-123'));
-    return Response.json({ status: 'completed', response: 'Llama reply' });
+    assert.equal(url, '/api/nano');
+    const body = JSON.parse(String(init?.body));
+    assert.deepEqual(body.history, [{ role: 'assistant', content: 'Earlier reply' }]);
+    assert.equal(body.message, 'next');
+    assert.equal(body.sessionId, undefined);
+    return Response.json({ response: 'Hosted reply' });
   });
-  assert.equal(await vm.runInContext("requestNano('next')", result.context), 'Llama reply');
-  assert.equal(calls, 2);
+  result.context.appState.chatHistory = [{ sender: 'nano', text: 'Earlier reply' }, { sender: 'user', text: 'next' }];
+  assert.equal(await vm.runInContext("requestNano('next')", result.context), 'Hosted reply');
 });
 
 test('singularity mode sends learned knowledge with chat', async () => {
@@ -92,6 +84,7 @@ test('singularity mode sends learned knowledge with chat', async () => {
   result.context.appState.chatHistory = [];
   result.context.appState.singularity = { enabled: true, useKnowledge: true, knowledge: [{ text: 'Likes tea' }] };
   assert.equal(await vm.runInContext("requestNano('hi')", result.context), 'ok');
+});
 test('chat includes learned context only when Singularity knowledge is enabled', async () => {
   const bodies: any[] = [];
   const result = setup(async (_url, init) => {
@@ -110,7 +103,7 @@ test('a learning cycle retains notes and pauses when Singularity is disabled', a
   let calls = 0;
   const nodes: Record<string, any> = {};
   const context = vm.createContext({
-    appState: {}, document: { getElementById: (id: string) => nodes[id] ||= { textContent: '', classList: { toggle() {} }, setAttribute() {} }, querySelectorAll: () => [] },
+    window: { addEventListener() {} }, appState: {}, document: { getElementById: (id: string) => nodes[id] ||= { textContent: '', classList: { toggle() {} }, setAttribute() {} }, querySelectorAll: () => [] },
     saveLocalState() {}, singularityKnowledge: () => [], escapeHtml: (s: string) => s,
     nanoFetch: async () => { calls++; return { learnings: [{ category: 'topic', text: 'One useful note' }] }; },
     clearInterval() {}, setInterval() {},

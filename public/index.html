@@ -174,7 +174,6 @@
                     <!-- Active Context & Focus -->
                     <div class="bg-slate-900/90 p-3 rounded-xl border border-darkBorder space-y-2">
                         <span class="text-xs text-slate-400 block">Primary Mission Focus</span>
-                        <p id="state-focus" class="text-xs text-slate-200">Managed by your Python controller</p>
                         <p id="state-focus" class="text-xs text-slate-200">Guided by your conversation and curiosity topics</p>
                     </div>
 
@@ -225,7 +224,7 @@
 
                     <!-- Chat Input Controls Bar -->
                     <div class="p-3 md:p-4 bg-darkCard border-t border-darkBorder">
-                        <p id="backend-status" role="status" class="text-xs text-slate-400 mb-2">Chat with Nano · Python + Llama</p>
+                        <p id="backend-status" role="status" class="text-xs text-slate-400 mb-2">Chat with Nano · Hosted AI</p>
                         <div id="chat-error" role="alert" class="hidden text-xs text-rose-300 mb-2"></div>
                         <form id="chat-form" onsubmit="handleChatSubmit(event)" class="relative flex items-center space-x-2">
                             <textarea id="chat-input" maxlength="4000" aria-label="Message Nano" rows="1" placeholder="Talk with Nano or prompt a reflection..." 
@@ -236,7 +235,7 @@
                             </button>
                         </form>
                         <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2 px-1">
-                            <span>Model: <span class="text-nano-400 font-mono">Llama · Python controller</span></span>
+                            <span>Model: <span class="text-nano-400 font-mono">GPT-4.1 mini</span></span>
                             <span>Press Enter to send, Shift+Enter for new line</span>
                         </div>
                     </div>
@@ -363,7 +362,7 @@
                         <ul id="directives-list" class="space-y-2 text-xs text-slate-300">
                             <li class="flex items-start space-x-2">
                                 <i class="fa-solid fa-check text-nano-400 mt-0.5"></i>
-                                <span>Server memory is backed up on the Linux host; browser notes are separate.</span>
+                                <span>Singularity learning notes are saved on Netlify; browser notes are separate.</span>
                             </li>
                             <li class="flex items-start space-x-2">
                                 <i class="fa-solid fa-check text-nano-400 mt-0.5"></i>
@@ -394,7 +393,6 @@
                         <h2 class="text-xl font-bold text-slate-100 flex items-center">
                             <i class="fa-solid fa-atom text-fuchsia-300 mr-2.5"></i>Singularity
                         </h2>
-                        <p class="text-xs text-slate-400 mt-1 max-w-md">When active, Nano learns on its own: it pulls lessons from your conversations, studies your curiosity topics while this page is open, and uses what it learned in future chats. Learned knowledge stays in this browser.</p>
                         <p class="text-xs text-slate-400 mt-1 max-w-md">When active, Nano keeps learning notes: it pulls lessons from your conversations, studies your curiosity topics while this page is open, and uses what it learned in future chats. Learned knowledge is saved privately for this browser on Netlify.</p>
                     </div>
                     <button onclick="toggleSingularity()" id="sing-toggle" aria-pressed="false" class="px-5 py-3 bg-gradient-to-r from-fuchsia-600 to-nano-500 hover:from-fuchsia-500 hover:to-nano-400 text-slate-950 font-bold text-sm rounded-xl shadow-lg transition flex items-center gap-2">
@@ -463,7 +461,7 @@
                     <h2 class="text-xl font-bold text-slate-100 flex items-center">
                         <i class="fa-solid fa-sliders text-nano-400 mr-2.5"></i>System & Personality Architecture
                     </h2>
-                    <p class="text-xs text-slate-400 mt-1">Browser preferences and notes. Chat uses your Python controller and Llama.</p>
+                    <p class="text-xs text-slate-400 mt-1">Browser preferences and notes. Chat uses Netlify hosted AI.</p>
                 </div>
 
                 <!-- Configuration Cards -->
@@ -472,7 +470,6 @@
                     <!-- System Prompt Config -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-300 mb-1.5">Legacy browser persona note (does not override Nano)</label>
-                        <textarea id="setting-system-prompt" rows="5" class="w-full bg-slate-900 border border-darkBorder rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-nano-500 resize-y">You are Nano, the AI assistant for NanoBotz. 
                         <textarea id="setting-system-prompt" rows="5" class="w-full bg-slate-900 border border-darkBorder rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-nano-500 resize-y">You are Nano, the AI assistant for NanoBotz.
 Provide helpful answers and practical guidance. Help users reflect on their goals when asked.
 Maintain a supportive, insightful, and clear tone.</textarea>
@@ -563,7 +560,7 @@ Maintain a supportive, insightful, and clear tone.</textarea>
 
                 <div class="bg-slate-900 p-3 rounded-xl border border-darkBorder space-y-2">
                     <h4 class="font-bold text-indigo-400">Nano model connection</h4>
-                    <p class="text-slate-400">This dashboard connects to your running Python backend and Llama model through a secure Netlify proxy. Keep your backend online for chat and reflections. Hosted AI is not used.</p>
+                    <p class="text-slate-400">Chat, reflections, and Singularity learning use Netlify AI Gateway. No separate Python server is required. Learning uses AI credits and runs while this page is open.</p>
                 </div>
             </div>
 
